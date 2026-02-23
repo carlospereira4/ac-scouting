@@ -60,3 +60,16 @@ body::before {
 
 .animate-in { animation: fadeIn .2s ease forwards; }
 .pulse { animation: pulse 1s infinite; }
+
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important; /* evita zoom automático no iOS */
+    min-height: 44px;
+  }
+  textarea {
+    min-height: 64px !important;
+  }
+  button {
+    min-height: 36px;
+  }
+}

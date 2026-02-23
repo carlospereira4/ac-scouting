@@ -51,8 +51,20 @@ function compressImage(file: File, maxPx = 400, quality = 0.65): Promise<string>
   })
 }
 
+/* ─── Mobile detection ──────────────────────────────────────────── */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+  return isMobile
+}
+
 /* ─── Grade button ─────────────────────────────────────────────── */
-const GradeBtn = ({ grade, selected, onClick }: { grade: Grade; selected: boolean; onClick: () => void }) => {
+const GradeBtn = ({ grade, selected, onClick, mobile }: { grade: Grade; selected: boolean; onClick: () => void; mobile?: boolean }) => {
   const colors: Record<Grade, string> = {
     A: 'bg-[#00c853] border-[#00c853] text-white shadow-[0_2px_8px_rgba(0,200,83,.4)]',
     B: 'bg-[#69c21a] border-[#69c21a] text-white shadow-[0_2px_8px_rgba(105,194,26,.4)]',
@@ -63,7 +75,7 @@ const GradeBtn = ({ grade, selected, onClick }: { grade: Grade; selected: boolea
   return (
     <button
       onClick={onClick}
-      className={`w-7 h-7 rounded border-[1.5px] font-black text-[13px] transition-all hover:scale-110 cursor-pointer
+      className={`${mobile ? 'w-10 h-10 text-[16px]' : 'w-7 h-7 text-[13px]'} rounded border-[1.5px] font-black transition-all hover:scale-110 cursor-pointer
         ${selected ? colors[grade] : 'border-[var(--border2)] bg-[var(--surface)] text-[var(--text-muted)]'}`}
       style={{ fontFamily: "'Barlow Condensed', sans-serif" }}
     >
@@ -88,6 +100,8 @@ function ScoutingApp() {
   const [detailGroup, setDetailGroup] = useState<{ nome: string; clube: string; reports: SavedReport[] } | null>(null)
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
   const saving = useRef<Record<string, boolean>>({})
+  const isMobile = useIsMobile()
+  const [showPreview, setShowPreview] = useState(false)
 
   /* Auth guard */
   useEffect(() => {
@@ -281,7 +295,7 @@ function ScoutingApp() {
     <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
 
       {/* HEADER */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 58, borderBottom: '1px solid var(--border)', background: 'rgba(10,14,24,.97)', flexShrink: 0, position: 'relative' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '0 12px' : '0 24px', height: isMobile ? 50 : 58, borderBottom: '1px solid var(--border)', background: 'rgba(10,14,24,.97)', flexShrink: 0, position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #d0021b 50%, #003f8a 50%)' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Crest size={40} />
@@ -293,9 +307,9 @@ function ScoutingApp() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'var(--surface2)', border: '1px solid var(--border2)', color: 'var(--text-dim)' }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: fbStatus === 'ok' ? 'var(--grade-a)' : fbStatus === 'error' ? 'var(--grade-e)' : 'var(--grade-c)', boxShadow: fbStatus === 'ok' ? '0 0 6px rgba(0,200,83,.5)' : 'none', flexShrink: 0, transition: 'background .3s' }} />
-            {fbStatus === 'ok' ? 'Sincronizado' : fbStatus === 'error' ? 'Erro de ligação' : 'A ligar…'}
+            {!isMobile && (fbStatus === 'ok' ? 'Sincronizado' : fbStatus === 'error' ? 'Erro de ligação' : 'A ligar…')}
           </div>
-          <button onClick={downloadAll} style={btnStyle('blue')}>⬇ Exportar Todos</button>
+          {!isMobile && <button onClick={downloadAll} style={btnStyle('blue')}>⬇ Exportar Todos</button>}
 
           {/* User info */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 4px 4px 10px', borderRadius: 20, background: 'var(--surface2)', border: '1px solid var(--border2)' }}>
@@ -305,9 +319,9 @@ function ScoutingApp() {
                   {(user.displayName || user.email || '?')[0].toUpperCase()}
                 </div>
             }
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {!isMobile && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-dim)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {user.displayName || user.email}
-            </span>
+            </span>}
             <button
               onClick={logout}
               style={{ padding: '4px 10px', borderRadius: 16, fontSize: 10, fontWeight: 700, cursor: 'pointer', border: '1px solid var(--border2)', background: 'transparent', color: 'var(--text-muted)', fontFamily: "'Barlow', sans-serif", transition: 'all .15s' }}
@@ -321,9 +335,9 @@ function ScoutingApp() {
       </header>
 
       {/* NAV */}
-      <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', background: 'var(--bg2)', padding: '0 24px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', borderBottom: '2px solid var(--border)', background: 'var(--bg2)', padding: isMobile ? '0' : '0 24px', flexShrink: 0 }}>
         {(['obs', 'rel'] as const).map(p => (
-          <button key={p} onClick={() => setPage(p)} style={{ padding: '10px 20px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: page === p ? 'var(--text)' : 'var(--text-dim)', cursor: 'pointer', border: 'none', background: 'transparent', borderBottom: page === p ? '2px solid var(--ac-red)' : '2px solid transparent', marginBottom: -2, transition: 'all .18s', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <button key={p} onClick={() => setPage(p)} style={{ flex: isMobile ? 1 : undefined, padding: isMobile ? '12px 10px' : '10px 20px', fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: page === p ? 'var(--text)' : 'var(--text-dim)', cursor: 'pointer', border: 'none', background: 'transparent', borderBottom: page === p ? '2px solid var(--ac-red)' : '2px solid transparent', marginBottom: -2, transition: 'all .18s', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : undefined, gap: 7 }}>
             {p === 'obs' ? '📋 Nova Observação' : '📁 Relatórios'}
             {p === 'rel' && <span style={{ background: 'var(--ac-red)', color: '#fff', fontSize: 9, fontWeight: 800, padding: '1px 5px', borderRadius: 8 }}>{savedReports.length}</span>}
           </button>
@@ -339,7 +353,7 @@ function ScoutingApp() {
               const pp = POSICOES[p.posicao]
               const isActive = p.id === activeId
               return (
-                <div key={p.id} onClick={() => setActiveId(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: '5px 5px 0 0', cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: isActive ? 'var(--text)' : 'var(--text-dim)', border: '1px solid', borderColor: isActive ? 'var(--border)' : 'transparent', borderBottom: isActive ? '1px solid var(--bg)' : '1px solid transparent', background: isActive ? 'var(--bg)' : 'transparent', position: 'relative', bottom: -1, whiteSpace: 'nowrap', minWidth: 110, justifyContent: 'space-between', transition: 'all .15s' }}>
+                <div key={p.id} onClick={() => setActiveId(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: '5px 5px 0 0', cursor: 'pointer', fontSize: 12.5, fontWeight: 500, color: isActive ? 'var(--text)' : 'var(--text-dim)', border: '1px solid', borderColor: isActive ? 'var(--border)' : 'transparent', borderBottom: isActive ? '1px solid var(--bg)' : '1px solid transparent', background: isActive ? 'var(--bg)' : 'transparent', position: 'relative', bottom: -1, whiteSpace: 'nowrap', minWidth: isMobile ? 85 : 110, justifyContent: 'space-between', transition: 'all .15s' }}>
                   {isActive && <div style={{ position: 'absolute', bottom: -2, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, var(--ac-red), var(--ac-blue))' }} />}
                   <div style={{ position: 'absolute', top: 6, right: 22, width: 6, height: 6, borderRadius: '50%', background: p.savedState === 'saved' ? 'var(--grade-a)' : 'var(--grade-c)' }} />
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.nome || 'Novo Jogador'}</span>
@@ -354,9 +368,9 @@ function ScoutingApp() {
           </div>
 
           {/* Form + Preview */}
-          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 420px', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 420px', overflow: 'hidden' }}>
             {/* FORM */}
-            <div style={{ padding: '20px 24px', overflowY: 'auto', borderRight: '1px solid var(--border)' }}>
+            <div style={{ padding: isMobile ? '14px 16px' : '20px 24px', overflowY: 'auto', borderRight: isMobile ? 'none' : '1px solid var(--border)', display: isMobile && showPreview ? 'none' : undefined }}>
               {!active ? (
                 <div style={{ textAlign: 'center', padding: '50px 20px', color: 'var(--text-dim)' }}>
                   <div style={{ fontSize: 40, marginBottom: 12, opacity: .3 }}>⚽</div>
@@ -370,7 +384,10 @@ function ScoutingApp() {
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: saveCls === 'ok' ? 'var(--grade-a)' : saveCls === 'err' ? 'var(--grade-e)' : 'var(--grade-c)', animation: saveCls === 'pending' ? 'pulse 1s infinite' : 'none' }} />
                       {saveTxt}
                     </div>
-                    <button onClick={manualSave} style={btnStyle('green')}>💾 Guardar agora</button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {isMobile && <button onClick={() => setShowPreview(true)} style={btnStyle('blue')}>📄 Ver PDF</button>}
+                      <button onClick={manualSave} style={btnStyle('green')}>💾 Guardar agora</button>
+                    </div>
                   </div>
 
                   <Section label="Foto do Jogador">
@@ -392,7 +409,7 @@ function ScoutingApp() {
                   </Section>
 
                   <Section label="Informações do Jogador">
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 9 }}>
                       <Field label="Nome Completo" full><input value={active.nome} onChange={e => updateActive('nome', e.target.value)} placeholder="ex: João Silva" style={inputStyle} /></Field>
                       <Field label="Idade"><input type="number" value={active.idade} onChange={e => updateActive('idade', e.target.value)} placeholder="22" style={inputStyle} /></Field>
                       <Field label="Nacionalidade"><input value={active.nacionalidade} onChange={e => updateActive('nacionalidade', e.target.value)} placeholder="ex: Portugal" style={inputStyle} /></Field>
@@ -449,9 +466,9 @@ function ScoutingApp() {
                                   </div>
                                 )}
                               </div>
-                              <div style={{ display: 'flex', gap: 3 }}>
+                              <div style={{ display: 'flex', gap: isMobile ? 5 : 3 }}>
                                 {GRADES.map(g => (
-                                  <GradeBtn key={g} grade={g} selected={r.grade === g} onClick={() => updateGrade(comp, g)} />
+                                  <GradeBtn key={g} grade={g} selected={r.grade === g} onClick={() => updateGrade(comp, g)} mobile={isMobile} />
                                 ))}
                               </div>
                             </div>
@@ -483,9 +500,12 @@ function ScoutingApp() {
             </div>
 
             {/* PREVIEW */}
-            <div style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg2)' }}>
+            <div style={{ display: isMobile && !showPreview ? 'none' : 'flex', flexDirection: 'column', background: 'var(--bg2)' }}>
               <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2.5, color: 'var(--text-dim)', textTransform: 'uppercase' }}>📄 Pré-visualização</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {isMobile && <button onClick={() => setShowPreview(false)} style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', color: 'var(--text-dim)', padding: '5px 10px', borderRadius: 5, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>← Voltar</button>}
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: 2.5, color: 'var(--text-dim)', textTransform: 'uppercase' }}>📄 Pré-visualização</div>
+                </div>
                 {active && <button onClick={downloadCurrent} style={btnStyle('red')}>⬇ PDF</button>}
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
