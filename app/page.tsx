@@ -115,7 +115,7 @@ function ScoutingApp() {
     const unsub = onSnapshot(col,
       snap => {
         const docs: SavedReport[] = []
-        snap.forEach(d => docs.push({ firestoreId: d.id, ...d.data() } as SavedReport))
+        snap.forEach(d => docs.push({ ...d.data(), firestoreId: d.id } as SavedReport))
         setSavedReports(docs)
         setFbStatus('ok')
       },
@@ -199,7 +199,7 @@ function ScoutingApp() {
       const col = collection(db, 'relatorios')
       const player = players.find(p => p.id === id)
       if (!player) return
-      const { id: _id, savedState: _s, ...data } = player
+      const { id: _id, savedState: _s, firestoreId: _fid, ...data } = player
       const saveData = { ...data, criadoPor: user?.displayName || user?.email || 'Desconhecido' }
       if (player.firestoreId) {
         await updateDoc(doc(db, 'relatorios', player.firestoreId), saveData)
