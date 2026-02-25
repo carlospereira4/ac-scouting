@@ -268,11 +268,15 @@ function ScoutingApp() {
 
   const deleteReport = useCallback(async (fid: string) => {
     if (!confirm('Eliminar este relatório definitivamente?')) return
-    await deleteDoc(doc(db, 'relatorios', fid))
-    if (detailGroup) {
-      const next = detailGroup.reports.filter(r => r.firestoreId !== fid)
-      if (!next.length) setDetailGroup(null)
-      else setDetailGroup({ ...detailGroup, reports: next })
+    try {
+      await deleteDoc(doc(db, 'relatorios', fid))
+      if (detailGroup) {
+        const next = detailGroup.reports.filter(r => r.firestoreId !== fid)
+        if (!next.length) setDetailGroup(null)
+        else setDetailGroup({ ...detailGroup, reports: next })
+      }
+    } catch (err: any) {
+      alert('Erro ao eliminar: ' + (err?.message || 'Sem permissão. Verifica as regras do Firestore.'))
     }
   }, [detailGroup])
 
